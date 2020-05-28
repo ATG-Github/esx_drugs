@@ -8,19 +8,14 @@ Adds the well-known drugs for the people who want to make quick money. Weed Fiel
 
 ## Download & Installation
 
-### Using [fvm](https://github.com/qlaffont/fvm-installer)
-```
-fvm install --save --folder=esx esx-org/esx_drugs
-```
-
 ### Using Git
 ```
 cd resources
-git clone https://github.com/ESX-Org/esx_drugs [esx]/esx_drugs
+git clone https://github.com/ATG-Github/esx_drugs [esx]/esx_drugs
 ```
 
 ### Manually
-- Download https://github.com/ESX-Org/esx_drugs/archive/master.zip
+- Download https://github.com/ATG-Github/esx_drugs/releases/download/v3/esx_drugs.zip
 - Put it in the `[esx]` directory
 
 ## Installation
