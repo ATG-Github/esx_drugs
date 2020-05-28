@@ -1,3 +1,7 @@
+# Security
+Tired of hackers stealing your drug locations? Faking drugs? Install this updated version with protected server events!
+- [Security FiveM Forum Thread](https://forum.cfx.re/t/re-release-esx-security-patches-updates-jail-qalle-jail-communityservice/1292760)
+
 # esx_drugs
 
 Adds the well-known drugs for the people who want to make quick money. Weed Field require you to run around and harvest weed plants, process and then sell at the beach of San Andreas!
