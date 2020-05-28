@@ -1,11 +1,80 @@
+-- ~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~= --
+--					Created By: ig0ne   				  --
+--			 Protected By: ATG-Github AKA ATG			  --
+-- ~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~= --
+
 ESX = nil
 local playersProcessingCannabis = {}
 
 TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
 
+function ensureLegitness(xPlayer, drug, stage)
+	local xPlayer, drug, stage = xPlayer, drug, stage;
+	local legit = {["legit"] = true, ["reason"] = "No flags found."}
+	if xPlayer ~= nil then
+		local pCoord = xPlayer.getCoords();
+		if pCoord ~= nil then
+			if drug ~= nil then
+				if stage ~= nil then
+					if drug == "weed" then
+						if stage == "collect" then
+							local dCoord = Config.CircleZones.WeedField;
+							local distance = #(pCoord - dCoord.coords);
+							if distance < dCoord.radius * 1.1 then
+								return legit
+							else
+								legit = {["legit"] = false, ["reason"] = "Player was out of the radius."}
+								return legit
+							end
+						elseif stage == "process" then
+							local dCoord = Config.CircleZones.WeedProcessing;
+							local distance = #(pCoord - dCoord.coords);
+							if distance < dCoord.radius * 1.1 then
+								return legit
+							else
+								legit = {["legit"] = false, ["reason"] = "Player was out of the radius."}
+								return legit
+							end
+						elseif stage == "sell" then
+							local dCoord = Config.CircleZones.DrugDealer;
+							local distance = #(pCoord - dCoord.coords);
+							if distance < dCoord.radius * 1.1 then
+								return legit
+							else
+								legit = {["legit"] = false, ["reason"] = "Player was out of the radius."}
+								return legit
+							end
+						else
+							legit = {["legit"] = false, ["reason"] = "The drug stage could not be matched."}
+							return legit
+						end
+					else
+						legit = {["legit"] = false, ["reason"] = "The drug type could not be matched."}
+						return legit
+					end
+				else
+					legit = {["legit"] = false, ["reason"] = "The drug stage was not supplied."}
+					return legit
+				end
+			else
+				legit = {["legit"] = false, ["reason"] = "The drug type was not supplied."}
+				return legit
+			end
+		else
+			legit = {["legit"] = false, ["reason"] = "Player coords were nil."}
+			return legit
+		end
+	else
+		legit = {["legit"] = false, ["reason"] = "xPlayer was nil."}
+		return legit
+	end
+end
+
+
 RegisterServerEvent('esx_drugs:sellDrug')
 AddEventHandler('esx_drugs:sellDrug', function(itemName, amount)
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local src = source;
+	local xPlayer = ESX.GetPlayerFromId(src)
 	local price = Config.DrugDealerItems[itemName]
 	local xItem = xPlayer.getInventoryItem(itemName)
 
@@ -19,16 +88,30 @@ AddEventHandler('esx_drugs:sellDrug', function(itemName, amount)
 		return
 	end
 
-	price = ESX.Math.Round(price * amount)
-
-	if Config.GiveBlack then
-		xPlayer.addAccountMoney('black_money', price)
-	else
-		xPlayer.addMoney(price)
+	local drugType = nil;
+	if itemName == "marijuana" then
+		drugType = "weed";
 	end
+	local legit = ensureLegitness(xPlayer, drugType, "sell");
+	if legit["legit"] == true then
+		price = ESX.Math.Round(price * amount)
 
-	xPlayer.removeInventoryItem(xItem.name, amount)
-	xPlayer.showNotification(_U('dealer_sold', amount, xItem.label, ESX.Math.GroupDigits(price)))
+		if Config.GiveBlack then
+			xPlayer.addAccountMoney('black_money', price)
+		else
+			xPlayer.addMoney(price)
+		end
+
+		xPlayer.removeInventoryItem(xItem.name, amount)
+		xPlayer.showNotification(_U('dealer_sold', amount, xItem.label, ESX.Math.GroupDigits(price)))
+	else
+		print(
+			string.format(
+				"^2%s^7 -> [^1%s^7] ^1%s^7 has attempted to sell ^2%s^7 but the legitness check returned false because ^1%s^7.",
+				GetCurrentResourceName(), src, GetPlayerName(src), drugType, legit["reason"]
+			)
+		)
+	end
 end)
 
 ESX.RegisterServerCallback('esx_drugs:buyLicense', function(source, cb, licenseName)
@@ -53,12 +136,23 @@ end)
 
 RegisterServerEvent('esx_drugs:pickedUpCannabis')
 AddEventHandler('esx_drugs:pickedUpCannabis', function()
-	local xPlayer = ESX.GetPlayerFromId(source)
+	local src = source;
+	local xPlayer = ESX.GetPlayerFromId(src)
 
-	if xPlayer.canCarryItem('cannabis', 1) then
-		xPlayer.addInventoryItem('cannabis', 1)
+	local legit = ensureLegitness(xPlayer, "weed", "collect");
+	if legit["legit"] == true then
+		if xPlayer.canCarryItem('cannabis', 1) then
+			xPlayer.addInventoryItem('cannabis', 1)
+		else
+			xPlayer.showNotification(_U('weed_inventoryfull'))
+		end
 	else
-		xPlayer.showNotification(_U('weed_inventoryfull'))
+		print(
+			string.format(
+				"^2%s^7 -> [^1%s^7] ^1%s^7 has attempted to collect ^2weed^7 but the legitness check returned false because ^1%s^7.",
+				GetCurrentResourceName(), src, GetPlayerName(src), legit["reason"]
+			)
+		)
 	end
 end)
 
@@ -78,10 +172,19 @@ AddEventHandler('esx_drugs:processCannabis', function()
 
 			if xCannabis.count > 3 then
 				if xPlayer.canSwapItem('cannabis', 3, 'marijuana', 1) then
-					xPlayer.removeInventoryItem('cannabis', 3)
-					xPlayer.addInventoryItem('marijuana', 1)
-
-					xPlayer.showNotification(_U('weed_processed'))
+					local legit = ensureLegitness(xPlayer, "weed", "process");
+					if legit["legit"] == true then
+						xPlayer.removeInventoryItem('cannabis', 3)
+						xPlayer.addInventoryItem('marijuana', 1)
+						xPlayer.showNotification(_U('weed_processed'))
+					else
+						print(
+							string.format(
+								"^2%s^7 -> [^1%s^7] ^1%s^7 has attempted to process ^2weed^7 but the legitness check returned false because ^1%s^7.",
+								GetCurrentResourceName(), _source, GetPlayerName(_source), legit["reason"]
+							)
+						)
+					end
 				else
 					xPlayer.showNotification(_U('weed_processingfull'))
 				end
@@ -115,4 +218,13 @@ end)
 RegisterServerEvent('esx:onPlayerDeath')
 AddEventHandler('esx:onPlayerDeath', function(data)
 	CancelProcessing(source)
+end)
+
+
+local calledUsers = {};
+ESX.RegisterServerCallback('esx_drugs:getCoords', function(source, cb)
+	if calledUsers[source] == nil then
+		calledUsers[source] = true;
+		cb(Config.CircleZones)
+	end
 end)

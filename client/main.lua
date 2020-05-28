@@ -1,3 +1,8 @@
+-- ~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~= --
+--					Created By: ig0ne   				  --
+--			 Protected By: ATG-Github AKA ATG			  --
+-- ~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~=~= --
+
 ESX = nil
 local menuOpen = false
 local wasOpen = false
@@ -13,9 +18,17 @@ Citizen.CreateThread(function()
 	end
 
 	ESX.PlayerData = ESX.GetPlayerData()
+
+	ESX.TriggerServerCallback('esx_drugs:getCoords', function(retTbl)
+		Config.CircleZones = retTbl;
+	end)
+
 end)
 
 Citizen.CreateThread(function()
+	repeat
+		Wait(1000)
+	until Config.CircleZones ~= nil
 	while true do
 		Citizen.Wait(0)
 		local playerPed = PlayerPedId()
@@ -150,6 +163,9 @@ function CreateBlipCircle(coords, text, radius, color, sprite)
 end
 
 Citizen.CreateThread(function()
+	repeat
+		Wait(1000)
+	until Config.CircleZones ~= nil
 	for k,zone in pairs(Config.CircleZones) do
 		CreateBlipCircle(zone.coords, zone.name, zone.radius, zone.color, zone.sprite)
 	end

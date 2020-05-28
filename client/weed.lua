@@ -3,6 +3,9 @@ local weedPlants = {}
 local isPickingUp, isProcessing = false, false
 
 Citizen.CreateThread(function()
+	repeat
+		Wait(1000)
+	until Config.CircleZones ~= nil
 	while true do
 		Citizen.Wait(500)
 		local coords = GetEntityCoords(PlayerPedId())
@@ -14,6 +17,9 @@ Citizen.CreateThread(function()
 end)
 
 Citizen.CreateThread(function()
+	repeat
+		Wait(1000)
+	until Config.CircleZones ~= nil
 	while true do
 		Citizen.Wait(0)
 		local playerPed = PlayerPedId()
